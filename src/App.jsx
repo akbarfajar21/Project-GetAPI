@@ -2,13 +2,17 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 
 const GetApi = () => {
-  const [products, setProduct] = useState([]);
+  const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const getData = async () => {
     const res = await axios.get("https://fakestoreapi.com/products");
-    setProduct(res.data);
+    setProducts(res.data);
+    const uniqueCategories = [...new Set(res.data.map(product => product.category))];
+    setCategories(uniqueCategories);
   };
 
   useEffect(() => {
@@ -25,11 +29,38 @@ const GetApi = () => {
     setSelectedProduct(null);
   };
 
+  const handleCategoryChange = (event) => {
+    setSelectedCategory(event.target.value);
+  };
+
+  const truncateText = (text, maxLength) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const filteredProducts = selectedCategory
+    ? products.filter(product => product.category === selectedCategory)
+    : products;
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4 text-center">Product List</h1>
+
+      <div className="mb-4 flex justify-center">
+        <select
+          className="p-2 border border-gray-300 rounded"
+          value={selectedCategory}
+          onChange={handleCategoryChange}
+        >
+          <option value="">All Categories</option>
+          {categories.map(category => (
+            <option key={category} value={category}>{category}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((prod) => (
+        {filteredProducts.map(prod => (
           <div
             className="card border rounded-lg shadow-lg p-4 flex flex-col items-center cursor-pointer transform transition-transform duration-300 hover:scale-105"
             key={prod.id}
@@ -37,7 +68,7 @@ const GetApi = () => {
           >
             <img src={prod.image} alt={prod.title} className="w-full h-64 object-contain mb-4 rounded" />
             <h2 className="text-lg font-semibold mb-2 text-center">{prod.title}</h2>
-            <p className="text-gray-700 mb-2 text-center">{prod.description}</p>
+            <p className="text-gray-700 mb-2 text-center">{truncateText(prod.description, 100)}</p>
             <p className="text-sm text-gray-600 text-center">Category: {prod.category}</p>
             <p className="text-lg font-bold text-blue-600 text-center">${prod.price}</p>
             <p className="text-sm text-gray-600 text-center">Rating: {prod.rating.rate} (count: {prod.rating.count})</p>
